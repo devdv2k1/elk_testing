@@ -1,0 +1,36 @@
+filebeat.inputs:
+- type: container
+  paths:
+    - /var/lib/docker/containers/*/*.log
+
+  multiline.type: pattern
+  multiline.pattern: '.* (INFO|ERROR|WARN|DEBUG|TRACE)'
+  multiline.negate: true
+  multiline.match: after
+  multiline.timeout: 5s
+
+  processors:
+    - add_docker_metadata: ~
+    - drop_event.when.or:
+        - contains.container.name: "filebeat"
+        - contains.container.name: "kibana"
+        - contains.container.name: "logstash"
+        - contains.container.name: "elasticsearch"
+    - add_tags:
+        when:
+          contains:
+            container.name: "frontend"
+        tags: ["frontend"]
+    - add_tags:
+        when:
+          contains:
+            container.name: "backend"
+        tags: ["backend"]
+    - add_tags:
+        when:
+          contains:
+            container.name: "tutorial_db"
+        tags: ["database"]
+output.logstash:
+  enabled: true
+  hosts: ["192.168.64.101:5044"]

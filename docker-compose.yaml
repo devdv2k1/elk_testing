@@ -1,0 +1,45 @@
+services:
+  elasticsearch:
+    image: elastic/elasticsearch:7.17.26
+    container_name: elasticsearch
+    restart: always
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - network.host=0.0.0.0
+      - xpack.security.http.ssl.enabled=false
+    ports:
+      - "9200:9200"
+    volumes:
+      - elsdata:/usr/share/elasticsearch/data
+    networks:
+      - elk
+  kibana:
+    image: elastic/kibana:7.17.26
+    container_name: kibana
+    restart: always
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    networks:
+      - elk
+  logstash:
+    image: elastic/logstash:7.17.26
+    container_name: logstash
+    restart: always
+    volumes:
+      - ./logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro
+    ports:
+      - "5044:5044" # Port nhận log từ Filebeat
+    environment:
+      - LS_JAVA_OPTS=-Xmx256m -Xms256m
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    networks:
+      - elk
+volumes:
+  elsdata:
+
+networks:
+  elk:
+    driver: bridge
